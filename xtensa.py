@@ -248,7 +248,7 @@ class XtensaProcessor(processor_t):
                 ("mul16s", 0xd10000, 0xff000f, Instr.fmt_RRR ),
                 ("mul16u", 0xc10000, 0xff000f, Instr.fmt_RRR ),
                 ("mull",   0x820000, 0xff000f, Instr.fmt_RRR ),
-		("neg",    0x300000, 0xff0f0f, Instr.fmt_RRR_2rr ),
+		("neg",    0x600000, 0xff0f0f, Instr.fmt_RRR_2rr ),
 		("nsa",    0x40e000, 0xfff00f, Instr.fmt_RRR_2r ),
 		("nop",    0x0020f0, 0xffffff, Instr.fmt_NONE ),
 		("or",     0x200000, 0xff000f, Instr.fmt_RRR ),
