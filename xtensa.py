@@ -16,6 +16,20 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+#  v0.1 - changes by tinhead
+#  bug fix for 'l8ui','l16si','l16ui','l32i','s8i','s16i' and 's32i' size and shift
+#  bug fix for 'rsr.epc2','rsr.epc3' detection
+#  'ill' added, normally one can work without
+#  'rsr.epc4','rsr.epc5','rsr.epc6','rsr.epc7' added
+#
+#  v0.2 - changes by tinhead
+#  bug fix for 'addmi' size
+#  bug fix for 'movi' size
+#  bug fix for 'l32r' with offset >= 0
+#  note: movi.n and addi with values higher than 127 looks bit wired in compare to
+#        xt-objdump, better would be something like 'ret.value = 0x80 - ret.value'
+#  in 'call0' the CF_CALL option commented out to fix the "; End of function" bug.
+
 from idaapi import *
 
 class Operand:
@@ -61,7 +75,7 @@ class Operand:
 			ret.value = val
 		elif self.type == Operand.MEM:
 			ret.type = o_mem
-			ret.addr = (cmd.ea+3+(val<<2))&0xfffffffc
+			ret.addr = (cmd.ea+3+(val<<2))&0xfffffffc if val < 0 else (((cmd.ea+3+(val<<2))-0x40000)&0xfffffffc)
 		elif self.type in (Operand.RELA, Operand.RELAL):
 			ret.type = o_near
 			ret.addr = val + cmd.ea + 4 if self.type == Operand.RELA else ((cmd.ea&0xfffffffc)+4+(val<<2))
@@ -105,9 +119,11 @@ class Instr(object):
 	fmt_RRR_ssa	= (3, (Operand(Operand.REG, 4, 8),))
 	fmt_RRR_ssai	= (3, (Operand(Operand.IMM, 4, 8, 1, 4),))
 	fmt_RRI8	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, signext = True)))
-	fmt_RRI8_addmi	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, signext = True, vshift=8)))
-	fmt_RRI8_i12	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 8, 16, 4, 8)))
-	fmt_RRI8_disp	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, vshift=2, dt=dt_word)))
+	fmt_RRI8_addmi	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, signext = True, vshift=8, dt=dt_dword)))
+	fmt_RRI8_i12	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 8, 16, 4, 8, dt=dt_word)))
+	fmt_RRI8_disp	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, vshift=0)))
+	fmt_RRI8_disp16	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, vshift=1, dt=dt_word)))
+	fmt_RRI8_disp32	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, vshift=2, dt=dt_dword)))
 	fmt_RRI8_b	= (3, (Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4), Operand(Operand.RELA, 8, 16)))
 	fmt_RRI8_bb	= (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 4, 1, 12), Operand(Operand.RELA, 8, 16)))
 	fmt_RI16	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM, 16, 8, dt=dt_dword)))
@@ -225,19 +241,20 @@ class XtensaProcessor(processor_t):
 		("bnei",   0x000066, 0x0000ff, Instr.fmt_BRI8_imm ),
 		("bnez",   0x000056, 0x0000ff, Instr.fmt_BRI12 ),
 		("break",  0x004000, 0xfff00f, Instr.fmt_RRR_2imm ),
-		("call0",  0x000005, 0x00003f, Instr.fmt_CALL_sh, CF_CALL ),
+		("call0",  0x000005, 0x00003f, Instr.fmt_CALL_sh ), # ,CF_CALL commented out
 		("callx0", 0x0000c0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL ),
 		("dsync",  0x002030, 0xffffff, Instr.fmt_NONE ),
 		("esync",  0x002020, 0xffffff, Instr.fmt_NONE ),
 		("extui",  0x040000, 0x0e000f, Instr.fmt_RRR_extui ),
 		("extw",   0x0020d0, 0xffffff, Instr.fmt_NONE ),
 		("isync",  0x002000, 0xffffff, Instr.fmt_NONE ),
+		("ill",	   0x000000, 0xffffff, Instr.fmt_NONE ),	# normally one not need this
 		("j",      0x000006, 0x00003f, Instr.fmt_CALL, CF_STOP ),
 		("jx",     0x0000a0, 0xfff0ff, Instr.fmt_CALLX, CF_STOP ),
 		("l8ui",   0x000002, 0x00f00f, Instr.fmt_RRI8_disp ),
-		("l16si",  0x009002, 0x00f00f, Instr.fmt_RRI8_disp ),
-		("l16ui",  0x001002, 0x00f00f, Instr.fmt_RRI8_disp ),
-		("l32i",   0x002002, 0x00f00f, Instr.fmt_RRI8_disp ),
+		("l16si",  0x009002, 0x00f00f, Instr.fmt_RRI8_disp16 ),
+		("l16ui",  0x001002, 0x00f00f, Instr.fmt_RRI8_disp16 ),
+		("l32i",   0x002002, 0x00f00f, Instr.fmt_RRI8_disp32 ),
 		("l32r",   0x000001, 0x00000f, Instr.fmt_RI16 ),
 		("memw",   0x0020c0, 0xffffff, Instr.fmt_NONE ),
 		("moveqz", 0x830000, 0xff000f, Instr.fmt_RRR ),
@@ -245,9 +262,9 @@ class XtensaProcessor(processor_t):
 		("movi",   0x00a002, 0x00f00f, Instr.fmt_RRI8_i12 ),
 		("movltz", 0xa30000, 0xff000f, Instr.fmt_RRR ),
 		("movnez", 0x930000, 0xff000f, Instr.fmt_RRR ),
-                ("mul16s", 0xd10000, 0xff000f, Instr.fmt_RRR ),
-                ("mul16u", 0xc10000, 0xff000f, Instr.fmt_RRR ),
-                ("mull",   0x820000, 0xff000f, Instr.fmt_RRR ),
+		("mul16s", 0xd10000, 0xff000f, Instr.fmt_RRR ),
+		("mul16u", 0xc10000, 0xff000f, Instr.fmt_RRR ),
+		("mull",   0x820000, 0xff000f, Instr.fmt_RRR ),
 		("neg",    0x600000, 0xff0f0f, Instr.fmt_RRR_2rr ),
 		("nsa",    0x40e000, 0xfff00f, Instr.fmt_RRR_2r ),
 		("nsau",   0x40f000, 0xfff00f, Instr.fmt_RRR_2r ),
@@ -259,8 +276,12 @@ class XtensaProcessor(processor_t):
 		("rsil",   0x006000, 0xfff00f, Instr.fmt_RRR_immr ),
 		("rsr.prid",      0x03eb00, 0xffff0f, Instr.fmt_RSR_spec ),
 		("rsr.epc1",      0x03b100, 0xffff0f, Instr.fmt_RSR_spec ),
-		("rsr.epc2",      0x03e200, 0xffff0f, Instr.fmt_RSR_spec ),
-		("rsr.epc3",      0x03e300, 0xffff0f, Instr.fmt_RSR_spec ),
+		("rsr.epc2",      0x03b200, 0xffff0f, Instr.fmt_RSR_spec ),
+		("rsr.epc3",      0x03b300, 0xffff0f, Instr.fmt_RSR_spec ),
+		("rsr.epc4",      0x03b400, 0xffff0f, Instr.fmt_RSR_spec ),
+		("rsr.epc5",      0x03b500, 0xffff0f, Instr.fmt_RSR_spec ),
+		("rsr.epc6",      0x03b600, 0xffff0f, Instr.fmt_RSR_spec ),
+		("rsr.epc7",      0x03b700, 0xffff0f, Instr.fmt_RSR_spec ),
 		("rsr.ps",        0x03e600, 0xffff0f, Instr.fmt_RSR_spec ),
 		("rsr.exccause",  0x03e800, 0xffff0f, Instr.fmt_RSR_spec ),
 		("rsr.ccount",    0x03e400, 0xffff0f, Instr.fmt_RSR_spec ),
@@ -275,8 +296,8 @@ class XtensaProcessor(processor_t):
 		("rsr",    0x030000, 0xff000f, Instr.fmt_RSR ),
 		("rsync",  0x002010, 0xffffff, Instr.fmt_NONE ),
 		("s8i",    0x004002, 0x00f00f, Instr.fmt_RRI8_disp ),
-		("s16i",   0x005002, 0x00f00f, Instr.fmt_RRI8_disp ),
-		("s32i",   0x006002, 0x00f00f, Instr.fmt_RRI8_disp ),
+		("s16i",   0x005002, 0x00f00f, Instr.fmt_RRI8_disp16 ),
+		("s32i",   0x006002, 0x00f00f, Instr.fmt_RRI8_disp32 ),
 		("sll",    0xa10000, 0xff00ff, Instr.fmt_RRR_sll ),
 		("slli",   0x010000, 0xef000f, Instr.fmt_RRR_slli ),
 		("sra",    0xb10000, 0xff0f0f, Instr.fmt_RRR_2rr ),
