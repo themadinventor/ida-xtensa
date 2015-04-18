@@ -28,7 +28,6 @@
 #  bug fix for 'l32r' with offset >= 0
 #  note: movi.n and addi with values higher than 127 looks bit wired in compare to
 #        xt-objdump, better would be something like 'ret.value = 0x80 - ret.value'
-#  in 'call0' the CF_CALL option commented out to fix the "; End of function" bug.
 
 from idaapi import *
 
@@ -241,14 +240,14 @@ class XtensaProcessor(processor_t):
 		("bnei",   0x000066, 0x0000ff, Instr.fmt_BRI8_imm ),
 		("bnez",   0x000056, 0x0000ff, Instr.fmt_BRI12 ),
 		("break",  0x004000, 0xfff00f, Instr.fmt_RRR_2imm ),
-		("call0",  0x000005, 0x00003f, Instr.fmt_CALL_sh ), # ,CF_CALL commented out
+		("call0",  0x000005, 0x00003f, Instr.fmt_CALL_sh, CF_CALL ),
 		("callx0", 0x0000c0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL ),
 		("dsync",  0x002030, 0xffffff, Instr.fmt_NONE ),
 		("esync",  0x002020, 0xffffff, Instr.fmt_NONE ),
 		("extui",  0x040000, 0x0e000f, Instr.fmt_RRR_extui ),
 		("extw",   0x0020d0, 0xffffff, Instr.fmt_NONE ),
 		("isync",  0x002000, 0xffffff, Instr.fmt_NONE ),
-		("ill",	   0x000000, 0xffffff, Instr.fmt_NONE ),	# normally one not need this
+#		("ill",	   0x000000, 0xffffff, Instr.fmt_NONE ),	# normally one not need this
 		("j",      0x000006, 0x00003f, Instr.fmt_CALL, CF_STOP ),
 		("jx",     0x0000a0, 0xfff0ff, Instr.fmt_CALLX, CF_STOP ),
 		("l8ui",   0x000002, 0x00f00f, Instr.fmt_RRI8_disp ),
