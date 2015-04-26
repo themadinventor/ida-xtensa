@@ -375,7 +375,7 @@ class XtensaProcessor(processor_t):
 			instr.id = i
 
 	def _init_registers(self):
-		self.regNames = ["a%d" % d for d in xrange(16)]
+		self.regNames = ["a%d" % d for d in range(16)]
 		self.regNames += ["pc", "sar", "CS", "DS"]
 		self.reg_ids = {}
 		for i, reg in enumerate(self.regNames):
@@ -413,7 +413,7 @@ class XtensaProcessor(processor_t):
 		
 		self.cmd.itype = instr.id
 
-		operands = [self.cmd[i] for i in xrange(6)]
+		operands = [self.cmd[i] for i in range(6)]
 		for o in operands:
 			o.type = o_void
 		instr.parseOperands(operands, op, self.cmd)
@@ -421,7 +421,7 @@ class XtensaProcessor(processor_t):
 		return self.cmd.size
 
 	def emu(self):
-		for i in xrange(6):
+		for i in range(6):
 			op = self.cmd[i]
 			if op.type == o_void:
 				break
@@ -463,7 +463,7 @@ class XtensaProcessor(processor_t):
 
 		instr = self.instrs_list[self.cmd.itype]
 
-		for i in xrange(6):
+		for i in range(6):
 			if self.cmd[i].type == o_void:
 				break
 
