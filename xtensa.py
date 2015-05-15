@@ -241,7 +241,7 @@ class XtensaProcessor(processor_t):
 		("bnez",   0x000056, 0x0000ff, Instr.fmt_BRI12 ),
 		("break",  0x004000, 0xfff00f, Instr.fmt_RRR_2imm ),
 		("call0",  0x000005, 0x00003f, Instr.fmt_CALL_sh, CF_CALL ),
-		("callx0", 0x0000c0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL ),
+		("callx0", 0x0000c0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL | CF_JUMP ),
 		("dsync",  0x002030, 0xffffff, Instr.fmt_NONE ),
 		("esync",  0x002020, 0xffffff, Instr.fmt_NONE ),
 		("extui",  0x040000, 0x0e000f, Instr.fmt_RRR_extui ),
@@ -249,7 +249,7 @@ class XtensaProcessor(processor_t):
 		("isync",  0x002000, 0xffffff, Instr.fmt_NONE ),
 #		("ill",	   0x000000, 0xffffff, Instr.fmt_NONE ),	# normally one not need this
 		("j",      0x000006, 0x00003f, Instr.fmt_CALL, CF_STOP ),
-		("jx",     0x0000a0, 0xfff0ff, Instr.fmt_CALLX, CF_STOP ),
+		("jx",     0x0000a0, 0xfff0ff, Instr.fmt_CALLX, CF_STOP | CF_JUMP ),
 		("l8ui",   0x000002, 0x00f00f, Instr.fmt_RRI8_disp ),
 		("l16si",  0x009002, 0x00f00f, Instr.fmt_RRI8_disp16 ),
 		("l16ui",  0x001002, 0x00f00f, Instr.fmt_RRI8_disp16 ),
@@ -436,8 +436,10 @@ class XtensaProcessor(processor_t):
 					fl = fl_JN
 				ua_add_cref(0, op.addr, fl)
 
-
-		if not self.cmd.get_canon_feature() & CF_STOP:
+		feature = self.cmd.get_canon_feature()
+		if feature & CF_JUMP:
+			QueueMark(Q_jumps, self.cmd.ea)
+		if not feature & CF_STOP:
 			ua_add_cref(0, self.cmd.ea + self.cmd.size, fl_F)
 		return True
 	
