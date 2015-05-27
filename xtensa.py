@@ -38,8 +38,9 @@ class Operand:
 	RELA	= 3
 	RELAL	= 4
 	RELU	= 5
+	MEM_INDEX = 6
 
-	def __init__(self, type, size, rshift, size2 = 0, rshift2 = 0, signext = False, vshift = 0, off = 0, xlate = None, dt = dt_byte):
+	def __init__(self, type, size, rshift, size2 = 0, rshift2 = 0, signext = False, vshift = 0, off = 0, xlate = None, dt = dt_byte, regbase = None):
 		self.type = type
 		self.size = size
 		self.rshift = rshift
@@ -50,9 +51,15 @@ class Operand:
 		self.off = off
 		self.xlate = xlate
 		self.dt = dt
+		self.regbase = regbase
+
+
+	def bitfield(self, op, size, rshift):
+		val = (op >> rshift) & (0xffffffff >> (32 - size))
+		return val
 
 	def parse(self, ret, op, cmd = None):
-		val = (op >> self.rshift) & (0xffffffff >> (32-self.size))
+		val = self.bitfield(op, self.size, self.rshift)
 		if self.size2:
 			val |= ((op >> self.rshift2) & (0xffffffff >> (32-self.size2))) << self.size
 
@@ -75,6 +82,10 @@ class Operand:
 		elif self.type == Operand.MEM:
 			ret.type = o_mem
 			ret.addr = (cmd.ea+3+(val<<2))&0xfffffffc if val < 0 else (((cmd.ea+3+(val<<2))-0x40000)&0xfffffffc)
+		elif self.type == Operand.MEM_INDEX:
+			ret.type = o_displ
+			ret.phrase = self.bitfield(op, *self.regbase)
+			ret.addr = val
 		elif self.type in (Operand.RELA, Operand.RELAL):
 			ret.type = o_near
 			ret.addr = val + cmd.ea + 4 if self.type == Operand.RELA else ((cmd.ea&0xfffffffc)+4+(val<<2))
@@ -120,9 +131,9 @@ class Instr(object):
 	fmt_RRI8	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, signext = True)))
 	fmt_RRI8_addmi	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, signext = True, vshift=8, dt=dt_dword)))
 	fmt_RRI8_i12	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 8, 16, 4, 8, dt=dt_word)))
-	fmt_RRI8_disp	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, vshift=0)))
-	fmt_RRI8_disp16	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, vshift=1, dt=dt_word)))
-	fmt_RRI8_disp32	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, vshift=2, dt=dt_dword)))
+	fmt_RRI8_disp	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 8, 16, vshift=0, regbase=(4, 8))))
+	fmt_RRI8_disp16	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 8, 16, vshift=1, dt=dt_word, regbase=(4, 8))))
+	fmt_RRI8_disp32	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 8, 16, vshift=2, dt=dt_dword, regbase=(4, 8))))
 	fmt_RRI8_b	= (3, (Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4), Operand(Operand.RELA, 8, 16)))
 	fmt_RRI8_bb	= (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 4, 1, 12), Operand(Operand.RELA, 8, 16)))
 	fmt_RI16	= (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM, 16, 8, dt=dt_dword)))
@@ -138,7 +149,7 @@ class Instr(object):
 	fmt_RRRN	= (2, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4)))
 	fmt_RRRN_addi	= (2, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 4, xlate=addin)))
 	fmt_RRRN_2r	= (2, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8)))
-	fmt_RRRN_disp	= (2, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 12, vshift=2)))
+	fmt_RRRN_disp	= (2, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 4, 12, vshift=2, regbase=(4, 8))))
 	fmt_RI6		= (2, (Operand(Operand.REG, 4, 8), Operand(Operand.RELU, 4, 12, 2, 4)))
 	fmt_RI7		= (2, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 12, 3, 4)))
 
@@ -455,6 +466,10 @@ class XtensaProcessor(processor_t):
 				OutLong(op.addr, 16)
 				out_tagoff(COLOR_ERROR)
 				QueueMark(Q_noName, self.cmd.ea)
+		elif op.type == o_displ:
+			out_register(self.regNames[op.phrase])
+			OutLine(", ")
+			OutValue(op, OOF_ADDR)
 		else:
 			return False
 		return True
