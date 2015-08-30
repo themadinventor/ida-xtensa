@@ -32,9 +32,9 @@
 from idaapi import *
 
 class Operand:
-    REG = 0
-    IMM = 1
-    MEM = 2
+    REG     = 0
+    IMM     = 1
+    MEM     = 2
     RELA    = 3
     RELAL   = 4
     RELU    = 5
@@ -113,45 +113,45 @@ def shimm(val):
 
 class Instr(object):
 
-    fmt_NONE    = (3, ())
-    fmt_NNONE   = (2, ())
-    fmt_RRR     = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4)))
+    fmt_NONE        = (3, ())
+    fmt_NNONE       = (2, ())
+    fmt_RRR         = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4)))
     fmt_RRR_extui   = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 4, 8, 1, 16), Operand(Operand.IMM, 4, 20, off=1)))
     fmt_RRR_1imm    = (3, (Operand(Operand.IMM, 4, 8),))
     fmt_RRR_2imm    = (3, (Operand(Operand.IMM, 4, 8), Operand(Operand.IMM, 4, 4)))
     fmt_RRR_immr    = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 4, 8)))
-    fmt_RRR_2r  = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8)))
-    fmt_RRR_2rr = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 4)))
-    fmt_RRR_sll = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8)))
+    fmt_RRR_2r      = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8)))
+    fmt_RRR_2rr     = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 4)))
+    fmt_RRR_sll     = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8)))
     fmt_RRR_slli    = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 4, 1, 20, xlate=shimm)))
     fmt_RRR_srai    = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 4, 8, 1, 20)))
-    fmt_RRR_sh  = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 4, 8)))
-    fmt_RRR_ssa = (3, (Operand(Operand.REG, 4, 8),))
+    fmt_RRR_sh      = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 4, 8)))
+    fmt_RRR_ssa     = (3, (Operand(Operand.REG, 4, 8),))
     fmt_RRR_ssai    = (3, (Operand(Operand.IMM, 4, 8, 1, 4),))
-    fmt_RRI8    = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, signext = True)))
+    fmt_RRI8        = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, signext = True)))
     fmt_RRI8_addmi  = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, signext = True, vshift=8, dt=dt_dword)))
     fmt_RRI8_i12    = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 8, 16, 4, 8, dt=dt_word)))
     fmt_RRI8_disp   = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 8, 16, vshift=0, regbase=(4, 8))))
     fmt_RRI8_disp16 = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 8, 16, vshift=1, dt=dt_word, regbase=(4, 8))))
     fmt_RRI8_disp32 = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 8, 16, vshift=2, dt=dt_dword, regbase=(4, 8))))
-    fmt_RRI8_b  = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4), Operand(Operand.RELA, 8, 16)))
-    fmt_RRI8_bb = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 4, 1, 12), Operand(Operand.RELA, 8, 16)))
-    fmt_RI16    = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM, 16, 8, dt=dt_dword)))
-    fmt_BRI8    = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.RELA, 8, 16)))
+    fmt_RRI8_b      = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4), Operand(Operand.RELA, 8, 16)))
+    fmt_RRI8_bb     = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 4, 1, 12), Operand(Operand.RELA, 8, 16)))
+    fmt_RI16        = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM, 16, 8, dt=dt_dword)))
+    fmt_BRI8        = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.RELA, 8, 16)))
     fmt_BRI8_imm    = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 12, xlate = b4const), Operand(Operand.RELA, 8, 16)))
     fmt_BRI8_immu   = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 12, xlate = b4constu), Operand(Operand.RELA, 8, 16)))
-    fmt_BRI12   = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.RELA, 12, 12)))
-    fmt_CALL    = (3, (Operand(Operand.RELA, 18, 6),))
-    fmt_CALL_sh = (3, (Operand(Operand.RELAL, 18, 6),))
-    fmt_CALLX   = (3, (Operand(Operand.REG, 4, 8),))
-    fmt_RSR     = (3, (Operand(Operand.IMM, 8, 8), Operand(Operand.REG, 4, 4)))
+    fmt_BRI12       = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.RELA, 12, 12)))
+    fmt_CALL        = (3, (Operand(Operand.RELA, 18, 6),))
+    fmt_CALL_sh     = (3, (Operand(Operand.RELAL, 18, 6),))
+    fmt_CALLX       = (3, (Operand(Operand.REG, 4, 8),))
+    fmt_RSR         = (3, (Operand(Operand.IMM, 8, 8), Operand(Operand.REG, 4, 4)))
     fmt_RSR_spec    = (3, (Operand(Operand.REG, 4, 4),))
-    fmt_RRRN    = (2, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4)))
+    fmt_RRRN        = (2, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4)))
     fmt_RRRN_addi   = (2, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 4, xlate=addin)))
-    fmt_RRRN_2r = (2, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8)))
+    fmt_RRRN_2r     = (2, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8)))
     fmt_RRRN_disp   = (2, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 4, 12, vshift=2, regbase=(4, 8))))
-    fmt_RI6     = (2, (Operand(Operand.REG, 4, 8), Operand(Operand.RELU, 4, 12, 2, 4)))
-    fmt_RI7     = (2, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 12, 3, 4)))
+    fmt_RI6         = (2, (Operand(Operand.REG, 4, 8), Operand(Operand.RELU, 4, 12, 2, 4)))
+    fmt_RI7         = (2, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 12, 3, 4)))
 
     def __init__(self, name, opcode, mask, fmt, flags = 0):
         self.name = name
