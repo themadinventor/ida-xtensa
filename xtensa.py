@@ -458,7 +458,12 @@ class XtensaProcessor(processor_t):
 		if op.type == o_reg:
 			out_register(self.regNames[op.reg])
 		elif op.type == o_imm:
-			OutValue(op, OOFW_IMM)
+			instr = self.instrs_list[self.cmd.itype]
+			if instr.name in ("extui", "bbci", "bbsi", "slli", "srli", "srai", "ssai"):
+				# bit numbers/shifts are always decimal
+				OutLong(op.value, 10)
+			else:
+				OutValue(op, OOFW_IMM)
 		elif op.type in (o_near, o_mem):
 			ok = out_name_expr(op, op.addr, BADADDR)
 			if not ok:
