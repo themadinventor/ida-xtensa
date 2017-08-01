@@ -29,6 +29,8 @@
 #  note: movi.n and addi with values higher than 127 looks bit wired in compare to
 #        xt-objdump, better would be something like 'ret.value = 0x80 - ret.value'
 
+import copy
+
 try:
     from idaapi import *
 except ImportError:
@@ -38,7 +40,7 @@ except ImportError:
     PR_SEGS = PR_DEFSEG32 = PR_RNAMESOK = PR_ADJSEGS = PRN_HEX = PR_USE32 = 0
     ASH_HEXF3 = ASD_DECF0 = ASO_OCTF1 = ASB_BINF3 = AS_NOTAB = AS_ASCIIC = AS_ASCIIZ = 0
     CF_CALL = CF_JUMP = CF_STOP = 0
-    o_void = None
+    o_void = o_reg = o_imm = o_displ = o_near = None
 
 class Operand:
     REG     = 0
@@ -539,6 +541,15 @@ if __name__ == "__main__":
         dp = DummyProcessor([ord(ch) for ch in b])
         instr, op = dp._find_instr()
         assert instr
+
+        class cmd(object):
+            ea = 1234
+
+        instr.operands = []
+        for operand in instr.fmt:
+            o = copy.copy(operand)
+            operand.parse(o, op, cmd)
+            instr.operands.append(o)
         return instr
 
     assert disasm("\x36\x61\x00").name == "entry"
@@ -551,3 +562,9 @@ if __name__ == "__main__":
     assert disasm("\x75\x0c\xa9").name == "call12"
     assert disasm("\x00\xbb\x23").name == "sext"
     assert disasm("\x20\xba\xa2").name == "muluh"
+    assert disasm("\x2c\x08").name == "movi.n"
+    assert disasm("\x2c\x08").operands[0].reg == 8
+    assert disasm("\x2c\x08").operands[1].value == 32
+    assert disasm("\x1c\x68").operands[1].value == 22
+    assert disasm("\x4c\x00").operands[1].value == 64
+    assert disasm("\x6c\x11").operands[1].value == -31
