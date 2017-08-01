@@ -7,8 +7,8 @@
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation; either version 2 of the License, or (at your option) any later version.
-# 
-# This program is distributed in the hope that it will be useful, but WITHOUT 
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 #
@@ -29,7 +29,18 @@
 #  note: movi.n and addi with values higher than 127 looks bit wired in compare to
 #        xt-objdump, better would be something like 'ret.value = 0x80 - ret.value'
 
-from idaapi import *
+import copy
+
+try:
+    from idaapi import *
+except ImportError:
+    class processor_t(object):
+        pass
+    dt_byte = dt_word = dt_dword = None
+    PR_SEGS = PR_DEFSEG32 = PR_RNAMESOK = PR_ADJSEGS = PRN_HEX = PR_USE32 = 0
+    ASH_HEXF3 = ASD_DECF0 = ASO_OCTF1 = ASB_BINF3 = AS_NOTAB = AS_ASCIIC = AS_ASCIIZ = 0
+    CF_CALL = CF_JUMP = CF_STOP = 0
+    o_void = o_reg = o_imm = o_displ = o_near = None
 
 class Operand:
     REG     = 0
@@ -105,6 +116,9 @@ def b4constu(val):
     lut = (32768, 65536, 2, 3, 4, 5, 6, 7, 8, 10, 12, 16, 32, 64, 128, 256)
     return lut[val]
 
+def movi_n(val):
+    return val if val & 0x60 != 0x60 else -(0x20 - val & 0x1f)
+
 def addin(val):
     return val if val else -1
 
@@ -117,6 +131,7 @@ class Instr(object):
     fmt_NNONE       = (2, ())
     fmt_RRR         = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4)))
     fmt_RRR_extui   = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 4, 8, 1, 16), Operand(Operand.IMM, 4, 20, off=1)))
+    fmt_RRR_sext    = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 4, off=7)))
     fmt_RRR_1imm    = (3, (Operand(Operand.IMM, 4, 8),))
     fmt_RRR_2imm    = (3, (Operand(Operand.IMM, 4, 8), Operand(Operand.IMM, 4, 4)))
     fmt_RRR_immr    = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 4, 8)))
@@ -141,6 +156,7 @@ class Instr(object):
     fmt_BRI8_imm    = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 12, xlate = b4const), Operand(Operand.RELA, 8, 16)))
     fmt_BRI8_immu   = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 12, xlate = b4constu), Operand(Operand.RELA, 8, 16)))
     fmt_BRI12       = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.RELA, 12, 12)))
+    fmt_RI12S3      = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 12, 12, vshift=3)))
     fmt_CALL        = (3, (Operand(Operand.RELA, 18, 6),))
     fmt_CALL_sh     = (3, (Operand(Operand.RELAL, 18, 6),))
     fmt_CALLX       = (3, (Operand(Operand.REG, 4, 8),))
@@ -151,7 +167,7 @@ class Instr(object):
     fmt_RRRN_2r     = (2, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8)))
     fmt_RRRN_disp   = (2, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 4, 12, vshift=2, regbase=(4, 8))))
     fmt_RI6         = (2, (Operand(Operand.REG, 4, 8), Operand(Operand.RELU, 4, 12, 2, 4)))
-    fmt_RI7         = (2, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 12, 3, 4)))
+    fmt_RI7         = (2, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 12, 3, 4, xlate=movi_n)))
 
     def __init__(self, name, opcode, mask, fmt, flags = 0):
         self.name = name
@@ -159,7 +175,7 @@ class Instr(object):
         self.mask = mask
         (self.size, self.fmt) = fmt
         self.flags = flags
-        
+
     def match(self, op):
         return (op & self.mask) == self.opcode
 
@@ -252,8 +268,15 @@ class XtensaProcessor(processor_t):
         ("bnez",   0x000056, 0x0000ff, Instr.fmt_BRI12 ),
         ("break",  0x004000, 0xfff00f, Instr.fmt_RRR_2imm ),
         ("call0",  0x000005, 0x00003f, Instr.fmt_CALL_sh, CF_CALL ),
+        ("call4",  0x000015, 0x00003f, Instr.fmt_CALL_sh, CF_CALL ),
+        ("call8",  0x000025, 0x00003f, Instr.fmt_CALL_sh, CF_CALL ),
+        ("call12", 0x000035, 0x00003f, Instr.fmt_CALL_sh, CF_CALL ),
         ("callx0", 0x0000c0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL | CF_JUMP ),
+        ("callx4", 0x0000d0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL | CF_JUMP ),
+        ("callx8", 0x0000e0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL | CF_JUMP ),
+        ("callx12",0x0000f0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL | CF_JUMP ),
         ("dsync",  0x002030, 0xffffff, Instr.fmt_NONE ),
+        ("entry",  0x000036, 0x0000ff, Instr.fmt_RI12S3 ),
         ("esync",  0x002020, 0xffffff, Instr.fmt_NONE ),
         ("extui",  0x040000, 0x0e000f, Instr.fmt_RRR_extui ),
         ("extw",   0x0020d0, 0xffffff, Instr.fmt_NONE ),
@@ -275,12 +298,14 @@ class XtensaProcessor(processor_t):
         ("mul16s", 0xd10000, 0xff000f, Instr.fmt_RRR ),
         ("mul16u", 0xc10000, 0xff000f, Instr.fmt_RRR ),
         ("mull",   0x820000, 0xff000f, Instr.fmt_RRR ),
+        ("muluh",  0xa20000, 0xff000f, Instr.fmt_RRR ),
         ("neg",    0x600000, 0xff0f0f, Instr.fmt_RRR_2rr ),
         ("nsa",    0x40e000, 0xfff00f, Instr.fmt_RRR_2r ),
         ("nsau",   0x40f000, 0xfff00f, Instr.fmt_RRR_2r ),
         ("nop",    0x0020f0, 0xffffff, Instr.fmt_NONE ),
         ("or",     0x200000, 0xff000f, Instr.fmt_RRR ),
         ("ret",    0x000080, 0xffffff, Instr.fmt_NONE, CF_STOP ),
+        ("retw.n", 0x00f01d, 0x00ffff, Instr.fmt_NNONE, CF_STOP ),
         ("rfe",    0x003000, 0xffffff, Instr.fmt_NONE, CF_STOP ),
         ("rfi",    0x003010, 0xfff0ff, Instr.fmt_RRR_1imm, CF_STOP ),
         ("rsil",   0x006000, 0xfff00f, Instr.fmt_RRR_immr ),
@@ -308,6 +333,7 @@ class XtensaProcessor(processor_t):
         ("s8i",    0x004002, 0x00f00f, Instr.fmt_RRI8_disp ),
         ("s16i",   0x005002, 0x00f00f, Instr.fmt_RRI8_disp16 ),
         ("s32i",   0x006002, 0x00f00f, Instr.fmt_RRI8_disp32 ),
+        ("sext",   0x230000, 0xff000f, Instr.fmt_RRR_sext ),
         ("sll",    0xa10000, 0xff00ff, Instr.fmt_RRR_sll ),
         ("slli",   0x010000, 0xef000f, Instr.fmt_RRR_slli ),
         ("sra",    0xb10000, 0xff0f0f, Instr.fmt_RRR_2rr ),
@@ -356,10 +382,10 @@ class XtensaProcessor(processor_t):
         processor_t.__init__(self)
         self._init_instructions()
         self._init_registers()
-    
+
     def _add_instruction(self, instr):
         self.instrs_list.append(instr)
-    
+
     def _init_instructions(self):
         self.instrs_list = []
         self.short_insts = []
@@ -379,7 +405,7 @@ class XtensaProcessor(processor_t):
         self.instrs = {}
         for instr in self.instrs_list:
             self.instrs[instr.name] = instr
-        
+
         self.instrs_ids = {}
         for i, instr in enumerate(self.instrs_list):
             self.instrs_ids[instr.name] = i
@@ -394,7 +420,7 @@ class XtensaProcessor(processor_t):
 
         self.regFirstSreg = self.regCodeSreg = self.reg_ids["CS"]
         self.regLastSreg = self.regDataSreg = self.reg_ids["DS"]
-    
+
     def _pull_op_byte(self):
         ea = self.cmd.ea + self.cmd.size
         byte = get_full_byte(ea)
@@ -404,7 +430,7 @@ class XtensaProcessor(processor_t):
     def _find_instr(self):
         op = self._pull_op_byte()
         op |= self._pull_op_byte() << 8
-        
+
         for instr in self.short_insts:
             if instr.match(op):
                 return instr, op
@@ -421,7 +447,7 @@ class XtensaProcessor(processor_t):
         instr, op = self._find_instr()
         if not instr:
             return 0
-        
+
         self.cmd.itype = instr.id
 
         operands = [self.cmd[i] for i in range(6)]
@@ -453,7 +479,7 @@ class XtensaProcessor(processor_t):
         if not feature & CF_STOP:
             ua_add_cref(0, self.cmd.ea + self.cmd.size, fl_F)
         return True
-    
+
     def outop(self, op):
         if op.type == o_reg:
             out_register(self.regNames[op.reg])
@@ -501,3 +527,44 @@ class XtensaProcessor(processor_t):
 
 def PROCESSOR_ENTRY():
     return XtensaProcessor()
+
+if __name__ == "__main__":
+    class DummyProcessor(XtensaProcessor):
+        def __init__(self, b):
+            XtensaProcessor.__init__(self)
+            self.b = b
+
+        def _pull_op_byte(self):
+            return self.b.pop(0)
+
+    def disasm(b):
+        dp = DummyProcessor([ord(ch) for ch in b])
+        instr, op = dp._find_instr()
+        assert instr
+
+        class cmd(object):
+            ea = 1234
+
+        instr.operands = []
+        for operand in instr.fmt:
+            o = copy.copy(operand)
+            operand.parse(o, op, cmd)
+            instr.operands.append(o)
+        return instr
+
+    assert disasm("\x36\x61\x00").name == "entry"
+    assert disasm("\xd0\x04\x00").name == "callx4"
+    assert disasm("\xe0\x08\x00").name == "callx8"
+    assert disasm("\xf0\x00\x00").name == "callx12"
+    assert disasm("\x1d\xf0").name == "retw.n"
+    assert disasm("\x55\xa2\x28").name == "call4"
+    assert disasm("\xe5\xc7\x01").name == "call8"
+    assert disasm("\x75\x0c\xa9").name == "call12"
+    assert disasm("\x00\xbb\x23").name == "sext"
+    assert disasm("\x20\xba\xa2").name == "muluh"
+    assert disasm("\x2c\x08").name == "movi.n"
+    assert disasm("\x2c\x08").operands[0].reg == 8
+    assert disasm("\x2c\x08").operands[1].value == 32
+    assert disasm("\x1c\x68").operands[1].value == 22
+    assert disasm("\x4c\x00").operands[1].value == 64
+    assert disasm("\x6c\x11").operands[1].value == -31
