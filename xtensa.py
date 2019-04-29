@@ -412,30 +412,30 @@ class XtensaProcessor(processor_t):
             instr.id = i
 
     def _init_registers(self):
-        self.regNames = ["a%d" % d for d in range(16)]
-        self.regNames += ["pc", "sar", "CS", "DS"]
+        self.reg_names = ["a%d" % d for d in range(16)]
+        self.reg_names += ["pc", "sar", "CS", "DS"]
         self.reg_ids = {}
-        for i, reg in enumerate(self.regNames):
+        for i, reg in enumerate(self.reg_names):
             self.reg_ids[reg] = i
 
-        self.regFirstSreg = self.regCodeSreg = self.reg_ids["CS"]
-        self.regLastSreg = self.regDataSreg = self.reg_ids["DS"]
+        self.reg_first_sreg = self.reg_code_sreg = self.reg_ids["CS"]
+        self.reg_last_sreg = self.reg_data_sreg = self.reg_ids["DS"]
 
-    def _pull_op_byte(self):
-        ea = self.cmd.ea + self.cmd.size
-        byte = get_full_byte(ea)
-        self.cmd.size += 1
+    def _pull_op_byte(self, insn):
+        ea = insn.ea + insn.size
+        byte = get_wide_byte(ea)
+        insn.size += 1
         return byte
 
-    def _find_instr(self):
-        op = self._pull_op_byte()
-        op |= self._pull_op_byte() << 8
+    def _find_instr(self, insn):
+        op = self._pull_op_byte(insn)
+        op |= self._pull_op_byte(insn) << 8
 
         for instr in self.short_insts:
             if instr.match(op):
                 return instr, op
 
-        op |= self._pull_op_byte() << 16
+        op |= self._pull_op_byte(insn) << 16
 
         for instr in self.long_insts:
             if instr.match(op):
@@ -443,86 +443,88 @@ class XtensaProcessor(processor_t):
 
         return None, op
 
-    def ana(self):
-        instr, op = self._find_instr()
+    def notify_ana(self, insn):
+        instr, op = self._find_instr(insn)
         if not instr:
             return 0
 
-        self.cmd.itype = instr.id
+        insn.itype = instr.id
 
-        operands = [self.cmd[i] for i in range(6)]
+        operands = [insn[i] for i in xrange(1, 6)]
         for o in operands:
             o.type = o_void
-        instr.parseOperands(operands, op, self.cmd)
+        instr.parseOperands(operands, op, insn)
 
-        return self.cmd.size
+        return insn.size
 
-    def emu(self):
-        for i in range(6):
-            op = self.cmd[i]
+    def emu(self, insn):
+        for i in xrange(1, 6):
+            op = insn[i]
             if op.type == o_void:
                 break
             elif op.type == o_mem:
-                ua_dodata2(0, op.addr, op.dtyp)
-                ua_add_dref(0, op.addr, dr_R)
+                insn.create_op_data(op.addr, 0, op.dtyp)
+                insn.add_dref(op.addr, 0, dr_R)
             elif op.type == o_near:
-                features = self.cmd.get_canon_feature()
+                features = insn.get_canon_feature()
                 if features & CF_CALL:
                     fl = fl_CN
                 else:
                     fl = fl_JN
-                ua_add_cref(0, op.addr, fl)
+                insn.add_cref(op.addr, 0, fl)
 
-        feature = self.cmd.get_canon_feature()
+        feature = insn.get_canon_feature()
         if feature & CF_JUMP:
-            QueueMark(Q_jumps, self.cmd.ea)
+            remember_problem(Q_jumps, insn.ea)
         if not feature & CF_STOP:
-            ua_add_cref(0, self.cmd.ea + self.cmd.size, fl_F)
+            insn.add_cref(insn.ea + insn.size, 0, fl_F)
         return True
 
-    def outop(self, op):
+    notify_emu = emu
+
+    def outop(self, ctx, op):
         if op.type == o_reg:
-            out_register(self.regNames[op.reg])
+            ctx.out_register(self.reg_names[op.reg])
         elif op.type == o_imm:
-            instr = self.instrs_list[self.cmd.itype]
+            instr = self.instrs_list[ctx.insn.itype]
             if instr.name in ("extui", "bbci", "bbsi", "slli", "srli", "srai", "ssai"):
                 # bit numbers/shifts are always decimal
-                OutLong(op.value, 10)
+                ctx.out_long(op.value, 10)
             else:
-                OutValue(op, OOFW_IMM)
+                ctx.out_value(op, OOFW_IMM)
         elif op.type in (o_near, o_mem):
-            ok = out_name_expr(op, op.addr, BADADDR)
+            ok = ctx.out_name_expr(op, op.addr, BADADDR)
             if not ok:
-                out_tagon(COLOR_ERROR)
-                OutLong(op.addr, 16)
-                out_tagoff(COLOR_ERROR)
-                QueueMark(Q_noName, self.cmd.ea)
+                ctx.out_tagon(COLOR_ERROR)
+                ctx.out_long(op.addr, 16)
+                ctx.out_tagoff(COLOR_ERROR)
+                remember_problem(Q_noName, ctx.insn.ea)
         elif op.type == o_displ:
-            out_register(self.regNames[op.phrase])
-            OutLine(", ")
-            OutValue(op, OOF_ADDR)
+            ctx.out_register(self.reg_names[op.phrase])
+            ctx.out_line(", ")
+            ctx.out_value(op, OOF_ADDR)
         else:
             return False
         return True
 
-    def out(self):
-        buf = init_output_buffer(1024)
-        OutMnem(15)
+    notify_out_operand = outop
 
-        instr = self.instrs_list[self.cmd.itype]
+    def out_mnem(self, ctx):
+        ctx.out_mnem(15, "")
 
-        for i in range(6):
-            if self.cmd[i].type == o_void:
+    def notify_out_insn(self, ctx):
+        ctx.out_mnemonic()
+        for i in xrange(1, 6):
+            if ctx.insn[i].type == o_void:
                 break
 
             if i > 0:
-                out_symbol(',')
-            OutChar(' ')
-            out_one_operand(i)
+                ctx.out_symbol(',')
+            ctx.out_char(' ')
+            ctx.out_one_operand(i)
 
-        term_output_buffer()
-        cvar.gl_comm = 1
-        MakeLine(buf)
+        ctx.set_gen_cmt()
+        ctx.flush_outbuf()
 
 
 def PROCESSOR_ENTRY():
