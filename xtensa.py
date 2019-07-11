@@ -308,7 +308,7 @@ class XtensaProcessor(processor_t):
         ("float.s",0xca0000, 0xff000f, Instr.fmt_RRR_ceil ),
         ("floor.s",0xaa0000, 0xff000f, Instr.fmt_RRR_ceil ),
         ("isync",  0x002000, 0xffffff, Instr.fmt_NONE ),
-#       ("ill",    0x000000, 0xffffff, Instr.fmt_NONE ),    # normally one not need this
+        ("ill",    0x000000, 0xffffff, Instr.fmt_NONE ),
         ("j",      0x000006, 0x00003f, Instr.fmt_CALL, CF_STOP | CF_JUMP),
         ("jx",     0x0000a0, 0xfff0ff, Instr.fmt_CALLX, CF_STOP | CF_JUMP ),
         ("l8ui",   0x000002, 0x00f00f, Instr.fmt_RRI8_disp ),
@@ -574,6 +574,7 @@ class XtensaProcessor(processor_t):
             # so it has to be ignored to detect function properly
             # this may be en issue sometimes but for what I've seend there not opcode using 0 as first byte
             if op == 0:
+                insn.itype = self.instrs_ids["ill"]
                 return 1
             return 0
 
