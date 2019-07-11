@@ -1,5 +1,6 @@
 # ida-xtensa
-This is a processor plugin for IDA, to support the Xtensa core found in Espressif ESP8266.
+This is a processor plugin for IDA 7.x, to support the Xtensa core found in
+Espressif ESP8266 and ESP32.
 It does not support other configurations of the Xtensa architecture, but that is probably
 (hopefully) easy to implement.
 
