@@ -249,7 +249,7 @@ class XtensaProcessor(processor_t):
         ("abs",    0x600100, 0xff0f0f, Instr.fmt_RRR_2rr ),
         ("abs.s",  0xfa0010, 0xff00ff, Instr.fmt_RRR_sll ),
         ("add",    0x800000, 0xff000f, Instr.fmt_RRR ),
-        ("add.s",  0xa00000, 0xff000f, Instr.fmt_RRR ),
+        ("add.s",  0x0a0000, 0xff000f, Instr.fmt_RRR ),
         ("addi",   0x00c002, 0x00f00f, Instr.fmt_RRI8 ),
         ("addmi",  0x00d002, 0x00f00f, Instr.fmt_RRI8_addmi ),
         ("addx2",  0x900000, 0xff000f, Instr.fmt_RRR ),
