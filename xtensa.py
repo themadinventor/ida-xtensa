@@ -129,11 +129,14 @@ class Instr(object):
 
     fmt_NONE        = (3, ())
     fmt_NNONE       = (2, ())
+    fmt_NNNONE      = (1, ())
     fmt_RRR         = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4)))
+    fmt_RRR_ceil    = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 4)))
     fmt_RRR_extui   = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 4, 8, 1, 16), Operand(Operand.IMM, 4, 20, off=1)))
     fmt_RRR_sext    = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 4, off=7)))
     fmt_RRR_1imm    = (3, (Operand(Operand.IMM, 4, 8),))
     fmt_RRR_2imm    = (3, (Operand(Operand.IMM, 4, 8), Operand(Operand.IMM, 4, 4)))
+    fmt_RRR_lddec   = (3, (Operand(Operand.IMM, 4, 8), Operand(Operand.IMM, 2, 12)))
     fmt_RRR_immr    = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 4, 8)))
     fmt_RRR_2r      = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8)))
     fmt_RRR_2rr     = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 4)))
@@ -142,13 +145,22 @@ class Instr(object):
     fmt_RRR_srai    = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 4, 8, 1, 20)))
     fmt_RRR_sh      = (3, (Operand(Operand.REG, 4, 12), Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 4, 8)))
     fmt_RRR_ssa     = (3, (Operand(Operand.REG, 4, 8),))
+    fmt_RRR_mul_ad  = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 1, 6)))
+    fmt_RRR_mul_da  = (3, (Operand(Operand.IMM, 1, 14), Operand(Operand.REG, 4, 4)))
+    fmt_RRR_mul_dd  = (3, (Operand(Operand.IMM, 1, 14), Operand(Operand.IMM, 1, 6)))
     fmt_RRR_ssai    = (3, (Operand(Operand.IMM, 4, 8, 1, 4),))
+    fmt_RRI4        = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 12, 4)))
     fmt_RRI8        = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, signext = True)))
+    fmt_RRI8_lsi    = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16)))
+    fmt_RRI8_bf     = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16,)))
+    fmt_RRI8_loop   = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.RELU, 8, 16)))
     fmt_RRI8_addmi  = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16, signext = True, vshift=8, dt=dt_dword)))
     fmt_RRI8_i12    = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.IMM, 8, 16, 4, 8, dt=dt_word)))
     fmt_RRI8_disp   = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 8, 16, vshift=0, regbase=(4, 8))))
     fmt_RRI8_disp16 = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 8, 16, vshift=1, dt=dt_word, regbase=(4, 8))))
     fmt_RRI8_disp32 = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM_INDEX, 8, 16, vshift=2, dt=dt_dword, regbase=(4, 8))))
+    fmt_RRI8_l32ai  = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.MEM_INDEX, 8, 16, vshift=2, dt=dt_dword, regbase=(4, 8))))
+    fmt_RRI8_s32c1a = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 8, 16)))
     fmt_RRI8_b      = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.REG, 4, 4), Operand(Operand.RELA, 8, 16)))
     fmt_RRI8_bb     = (3, (Operand(Operand.REG, 4, 8), Operand(Operand.IMM, 4, 4, 1, 12), Operand(Operand.RELA, 8, 16)))
     fmt_RI16        = (3, (Operand(Operand.REG, 4, 4), Operand(Operand.MEM, 16, 8, dt=dt_dword)))
@@ -235,80 +247,172 @@ class XtensaProcessor(processor_t):
 
     ops = (
         ("abs",    0x600100, 0xff0f0f, Instr.fmt_RRR_2rr ),
+        ("abs.s",  0xfa0010, 0xff00ff, Instr.fmt_RRR_sll ),
         ("add",    0x800000, 0xff000f, Instr.fmt_RRR ),
+        ("add.s",  0x0a0000, 0xff000f, Instr.fmt_RRR ),
         ("addi",   0x00c002, 0x00f00f, Instr.fmt_RRI8 ),
         ("addmi",  0x00d002, 0x00f00f, Instr.fmt_RRI8_addmi ),
         ("addx2",  0x900000, 0xff000f, Instr.fmt_RRR ),
         ("addx4",  0xa00000, 0xff000f, Instr.fmt_RRR ),
         ("addx8",  0xb00000, 0xff000f, Instr.fmt_RRR ),
+        ("all4",   0x009000, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("all8",   0x00b000, 0xfff00f, Instr.fmt_RRR_2r ),
         ("and",    0x100000, 0xff000f, Instr.fmt_RRR ),
-        ("ball",   0x004007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("bany",   0x008007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("bbc",    0x005007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("bbs",    0x00d007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("bbci",   0x006007, 0x00e00f, Instr.fmt_RRI8_bb ),
-        ("bbsi",   0x00e007, 0x00e00f, Instr.fmt_RRI8_bb ),
-        ("beq",    0x001007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("beqi",   0x000026, 0x0000ff, Instr.fmt_BRI8_imm ), # was RRI8
-        ("beqz",   0x000016, 0x0000ff, Instr.fmt_BRI12 ),
-        ("bge",    0x00a007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("bgei",   0x0000e6, 0x0000ff, Instr.fmt_BRI8_imm ),
-        ("bgeu",   0x00b007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("bgeui",  0x0000f6, 0x0000ff, Instr.fmt_BRI8_immu ),
-        ("bgez",   0x0000d6, 0x0000ff, Instr.fmt_BRI12 ),
-        ("blt",    0x002007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("blti",   0x0000a6, 0x0000ff, Instr.fmt_BRI8_imm ),
-        ("bltu",   0x003007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("bltui",  0x0000b6, 0x0000ff, Instr.fmt_BRI8_immu ),
-        ("bltz",   0x000096, 0x0000ff, Instr.fmt_BRI12 ),
-        ("bnall",  0x00c007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("bnone",  0x000007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("bne",    0x009007, 0x00f00f, Instr.fmt_RRI8_b ),
-        ("bnei",   0x000066, 0x0000ff, Instr.fmt_BRI8_imm ),
-        ("bnez",   0x000056, 0x0000ff, Instr.fmt_BRI12 ),
+        ("andb",   0x020000, 0xff000f, Instr.fmt_RRR ),
+        ("andbc",  0x120000, 0xff000f, Instr.fmt_RRR ),
+        ("any4",   0x008000, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("any8",   0x00a000, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("ball",   0x004007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("bany",   0x008007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("bbc",    0x005007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("bbs",    0x00d007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("bbci",   0x006007, 0x00e00f, Instr.fmt_RRI8_bb, CF_JUMP ),
+        ("bbsi",   0x00e007, 0x00e00f, Instr.fmt_RRI8_bb, CF_JUMP ),
+        ("beq",    0x001007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("beqi",   0x000026, 0x0000ff, Instr.fmt_BRI8_imm, CF_JUMP ), # was RRI8
+        ("beqz",   0x000016, 0x0000ff, Instr.fmt_BRI12, CF_JUMP ),
+        ("bf",     0x000076, 0x00f0ff, Instr.fmt_RRI8_bf, CF_JUMP ),
+        ("bge",    0x00a007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("bgei",   0x0000e6, 0x0000ff, Instr.fmt_BRI8_imm, CF_JUMP ),
+        ("bgeu",   0x00b007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("bgeui",  0x0000f6, 0x0000ff, Instr.fmt_BRI8_immu, CF_JUMP ),
+        ("bgez",   0x0000d6, 0x0000ff, Instr.fmt_BRI12, CF_JUMP ),
+        ("blt",    0x002007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("blti",   0x0000a6, 0x0000ff, Instr.fmt_BRI8_imm, CF_JUMP ),
+        ("bltu",   0x003007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("bltui",  0x0000b6, 0x0000ff, Instr.fmt_BRI8_immu, CF_JUMP ),
+        ("bltz",   0x000096, 0x0000ff, Instr.fmt_BRI12, CF_JUMP ),
+        ("bnall",  0x00c007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("bnone",  0x000007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("bne",    0x009007, 0x00f00f, Instr.fmt_RRI8_b, CF_JUMP ),
+        ("bnei",   0x000066, 0x0000ff, Instr.fmt_BRI8_imm, CF_JUMP ),
+        ("bnez",   0x000056, 0x0000ff, Instr.fmt_BRI12, CF_JUMP ),
         ("break",  0x004000, 0xfff00f, Instr.fmt_RRR_2imm ),
-        ("call0",  0x000005, 0x00003f, Instr.fmt_CALL_sh, CF_CALL ),
-        ("call4",  0x000015, 0x00003f, Instr.fmt_CALL_sh, CF_CALL ),
-        ("call8",  0x000025, 0x00003f, Instr.fmt_CALL_sh, CF_CALL ),
-        ("call12", 0x000035, 0x00003f, Instr.fmt_CALL_sh, CF_CALL ),
+        ("bt",     0x001076, 0x00f0ff, Instr.fmt_RRI8_bf, CF_JUMP ),
+        ("call0",  0x000005, 0x00003f, Instr.fmt_CALL_sh, CF_CALL | CF_JUMP),
+        ("call4",  0x000015, 0x00003f, Instr.fmt_CALL_sh, CF_CALL | CF_JUMP),
+        ("call8",  0x000025, 0x00003f, Instr.fmt_CALL_sh, CF_CALL | CF_JUMP),
+        ("call12", 0x000035, 0x00003f, Instr.fmt_CALL_sh, CF_CALL | CF_JUMP),
         ("callx0", 0x0000c0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL | CF_JUMP ),
         ("callx4", 0x0000d0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL | CF_JUMP ),
         ("callx8", 0x0000e0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL | CF_JUMP ),
         ("callx12",0x0000f0, 0xfff0ff, Instr.fmt_CALLX, CF_CALL | CF_JUMP ),
+        ("ceil.s", 0xba0000, 0xff000f, Instr.fmt_RRR_ceil, ),
+        ("clamps", 0x330000, 0xff000f, Instr.fmt_RRR_ceil, ),
         ("dsync",  0x002030, 0xffffff, Instr.fmt_NONE ),
         ("entry",  0x000036, 0x0000ff, Instr.fmt_RI12S3 ),
         ("esync",  0x002020, 0xffffff, Instr.fmt_NONE ),
+        ("excw",   0x002080, 0xffffff, Instr.fmt_NONE ),
         ("extui",  0x040000, 0x0e000f, Instr.fmt_RRR_extui ),
         ("extw",   0x0020d0, 0xffffff, Instr.fmt_NONE ),
+        ("float.s",0xca0000, 0xff000f, Instr.fmt_RRR_ceil ),
+        ("floor.s",0xaa0000, 0xff000f, Instr.fmt_RRR_ceil ),
         ("isync",  0x002000, 0xffffff, Instr.fmt_NONE ),
-#       ("ill",    0x000000, 0xffffff, Instr.fmt_NONE ),    # normally one not need this
-        ("j",      0x000006, 0x00003f, Instr.fmt_CALL, CF_STOP ),
+        ("ill",    0x000000, 0xffffff, Instr.fmt_NONE ),
+        ("j",      0x000006, 0x00003f, Instr.fmt_CALL, CF_STOP | CF_JUMP),
         ("jx",     0x0000a0, 0xfff0ff, Instr.fmt_CALLX, CF_STOP | CF_JUMP ),
         ("l8ui",   0x000002, 0x00f00f, Instr.fmt_RRI8_disp ),
         ("l16si",  0x009002, 0x00f00f, Instr.fmt_RRI8_disp16 ),
         ("l16ui",  0x001002, 0x00f00f, Instr.fmt_RRI8_disp16 ),
+        ("l32ai",  0x00b002, 0x00f00f, Instr.fmt_RRI8_l32ai ),
+        ("l32e",   0x090000, 0xff000f, Instr.fmt_RRR_ceil ),
         ("l32i",   0x002002, 0x00f00f, Instr.fmt_RRI8_disp32 ),
         ("l32r",   0x000001, 0x00000f, Instr.fmt_RI16 ),
+        ("lddec",  0x900004, 0xffc0ff, Instr.fmt_RRR_lddec ),
+        ("ldinc",  0x800004, 0xffc0ff, Instr.fmt_RRR_lddec ),
+        ("loop",   0x008076, 0x00f0ff, Instr.fmt_RRI8_loop, CF_JUMP ),
+        ("loopgtz",0x00a076, 0x00f0ff, Instr.fmt_RRI8_loop, CF_JUMP ),
+        ("loopnez",0x009076, 0x00f0ff, Instr.fmt_RRI8_loop, CF_JUMP ),
+        ("lsi",    0x000003, 0x00f00f, Instr.fmt_RRI8_lsi ),
+        ("lsiu",   0x008003, 0x00f00f, Instr.fmt_RRI8_lsi ),
+        ("lsx",    0x080000, 0xff000f, Instr.fmt_RRR ),
+        ("lsxu",   0x180000, 0xff000f, Instr.fmt_RRR ),
+        ("madd.s", 0x4a0000, 0xff000f, Instr.fmt_RRR ),
+        ("max",    0x530000, 0xff000f, Instr.fmt_RRR ),
+        ("maxu",   0x730000, 0xff000f, Instr.fmt_RRR ),
         ("memw",   0x0020c0, 0xffffff, Instr.fmt_NONE ),
+        ("min",    0x430000, 0xff000f, Instr.fmt_RRR ),
+        ("minu",   0x630000, 0xff000f, Instr.fmt_RRR ),
+        ("mov",    0x200000, 0xff000f, Instr.fmt_RRR_sll ),
+        ("mov.s",  0xfa0000, 0xff00ff, Instr.fmt_RRR_sll ),
         ("moveqz", 0x830000, 0xff000f, Instr.fmt_RRR ),
+        ("moveqz.s",      0x8b0000, 0xff000f, Instr.fmt_RRR ),
+        ("movf",   0xc30000, 0xff000f, Instr.fmt_RRR ),
+        ("movf.s", 0xcb0000, 0xff000f, Instr.fmt_RRR ),
         ("movgez", 0xb30000, 0xff000f, Instr.fmt_RRR ),
+        ("movgez.s",      0xbb0000, 0xff000f, Instr.fmt_RRR ),
         ("movi",   0x00a002, 0x00f00f, Instr.fmt_RRI8_i12 ),
         ("movltz", 0xa30000, 0xff000f, Instr.fmt_RRR ),
+        ("movltz.s",      0xab0000, 0xff000f, Instr.fmt_RRR ),
         ("movnez", 0x930000, 0xff000f, Instr.fmt_RRR ),
+        ("movnez.s",      0x9b0000, 0xff000f, Instr.fmt_RRR ),
+        ("movsp",  0x001000, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("movt",   0xd30000, 0xff000f, Instr.fmt_RRR ),
+        ("movt.s", 0xdb0000, 0xff000f, Instr.fmt_RRR ),
+        ("msub.s", 0x5a0000, 0xff000f, Instr.fmt_RRR ),
+        ("mul.aa.ll",     0x740004, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("mul.aa.hl",     0x750004, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("mul.aa.lh",     0x760004, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("mul.aa.hh",     0x770004, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("mul.ad.ll",     0x340004, 0xfff0bf, Instr.fmt_RRR_mul_ad ),
+        ("mul.ad.hl",     0x350004, 0xfff0bf, Instr.fmt_RRR_mul_ad ),
+        ("mul.ad.lh",     0x360004, 0xfff0bf, Instr.fmt_RRR_mul_ad ),
+        ("mul.ad.hh",     0x370004, 0xfff0bf, Instr.fmt_RRR_mul_ad ),
+        ("mul.da.ll",     0x640004, 0xffbf0f, Instr.fmt_RRR_mul_da ),
+        ("mul.da.lh",     0x650004, 0xffbf0f, Instr.fmt_RRR_mul_da ),
+        ("mul.da.hl",     0x650004, 0xffbf0f, Instr.fmt_RRR_mul_da ),
+        ("mul.da.hh",     0x670004, 0xffbf0f, Instr.fmt_RRR_mul_da ),
+        ("mul.dd.ll",     0x240004, 0xffbfbf, Instr.fmt_RRR_mul_dd ),
+        ("mul.dd.lh",     0x250004, 0xffbfbf, Instr.fmt_RRR_mul_dd ),
+        ("mul.dd.hl",     0x260004, 0xffbfbf, Instr.fmt_RRR_mul_dd ),
+        ("mul.dd.hh",     0x270004, 0xffbfbf, Instr.fmt_RRR_mul_dd ),
+        ("mul.s", 0x2a0000, 0xff000f, Instr.fmt_RRR ),
+        ("mula.aa.ll",    0x780004, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("mula.aa.hl",    0x790004, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("mula.aa.lh",    0x7a0004, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("mula.aa.hh",    0x7b0004, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("mula.ad.ll",    0x380004, 0xfff0bf, Instr.fmt_RRR_mul_ad ),
+        ("mula.ad.hl",    0x390004, 0xfff0bf, Instr.fmt_RRR_mul_ad ),
+        ("mula.ad.lh",    0x3a0004, 0xfff0bf, Instr.fmt_RRR_mul_ad ),
+        ("mula.ad.hh",    0x3b0004, 0xfff0bf, Instr.fmt_RRR_mul_ad ),
+        ("mula.da.ll",    0x680004, 0xffbf0f, Instr.fmt_RRR_mul_da ),
+        ("mula.da.lh",    0x690004, 0xffbf0f, Instr.fmt_RRR_mul_da ),
+        ("mula.da.hl",    0x6a0004, 0xffbf0f, Instr.fmt_RRR_mul_da ),
+        ("mula.da.hh",    0x6b0004, 0xffbf0f, Instr.fmt_RRR_mul_da ),
+        ("mula.dd.ll",    0x280004, 0xffbfbf, Instr.fmt_RRR_mul_dd ),
+        ("mula.dd.lh",    0x290004, 0xffbfbf, Instr.fmt_RRR_mul_dd ),
+        ("mula.dd.hl",    0x2a0004, 0xffbfbf, Instr.fmt_RRR_mul_dd ),
+        ("mula.dd.hh",    0x2b0004, 0xffbfbf, Instr.fmt_RRR_mul_dd ),
+        ("mull",   0x820000, 0xff000f, Instr.fmt_RRR ),
+        ("mulsh",  0xb10000, 0xff000f, Instr.fmt_RRR ),
         ("mul16s", 0xd10000, 0xff000f, Instr.fmt_RRR ),
         ("mul16u", 0xc10000, 0xff000f, Instr.fmt_RRR ),
-        ("mull",   0x820000, 0xff000f, Instr.fmt_RRR ),
         ("muluh",  0xa20000, 0xff000f, Instr.fmt_RRR ),
         ("neg",    0x600000, 0xff0f0f, Instr.fmt_RRR_2rr ),
+        ("neg.s",  0xfa0060, 0xff00ff, Instr.fmt_RRR_sll ),
+        ("nop",    0x0020f0, 0xffffff, Instr.fmt_NONE ),
         ("nsa",    0x40e000, 0xfff00f, Instr.fmt_RRR_2r ),
         ("nsau",   0x40f000, 0xfff00f, Instr.fmt_RRR_2r ),
-        ("nop",    0x0020f0, 0xffffff, Instr.fmt_NONE ),
+        ("oeq.s",  0x2b0000, 0xff000f, Instr.fmt_RRR ),
+        ("ole.s",  0x6b0000, 0xff000f, Instr.fmt_RRR ),
+        ("olt.s",  0x4b0000, 0xff000f, Instr.fmt_RRR ),
         ("or",     0x200000, 0xff000f, Instr.fmt_RRR ),
+        ("orb",    0x220000, 0xff000f, Instr.fmt_RRR ),
+        ("orbc",   0x320000, 0xff000f, Instr.fmt_RRR ),
+        ("quos",   0xd20000, 0xff000f, Instr.fmt_RRR ),
+        ("quou",   0xc20000, 0xff000f, Instr.fmt_RRR ),
+        ("rmes",   0xf20000, 0xff000f, Instr.fmt_RRR ),
+        ("remu",   0xe20000, 0xff000f, Instr.fmt_RRR ),
+        ("rer",    0x406000, 0xfff00f, Instr.fmt_RRR_2r ),
         ("ret",    0x000080, 0xffffff, Instr.fmt_NONE, CF_STOP ),
-        ("retw.n", 0x00f01d, 0x00ffff, Instr.fmt_NNONE, CF_STOP ),
+        ("retw",   0x000090, 0xffffff, Instr.fmt_NONE, CF_STOP ),
+        ("rfr",    0xfa0040, 0xff00ff, Instr.fmt_RRR_sll ),
+        ("rfue",   0x003100, 0xffffff, Instr.fmt_NONE, CF_STOP ),
+        ("rfwo",   0x003400, 0xffffff, Instr.fmt_NONE, CF_STOP ),
+        ("rfwu",   0x003500, 0xffffff, Instr.fmt_NONE, CF_STOP ),
+        ("round.s",0x8a0000, 0xff000f, Instr.fmt_RRR_ceil ),
         ("rfe",    0x003000, 0xffffff, Instr.fmt_NONE, CF_STOP ),
         ("rfi",    0x003010, 0xfff0ff, Instr.fmt_RRR_1imm, CF_STOP ),
-        ("rsil",   0x006000, 0xfff00f, Instr.fmt_RRR_immr ),
         ("rsr.prid",      0x03eb00, 0xffff0f, Instr.fmt_RSR_spec ),
         ("rsr.epc1",      0x03b100, 0xffff0f, Instr.fmt_RSR_spec ),
         ("rsr.epc2",      0x03b200, 0xffff0f, Instr.fmt_RSR_spec ),
@@ -332,7 +436,10 @@ class XtensaProcessor(processor_t):
         ("rsync",  0x002010, 0xffffff, Instr.fmt_NONE ),
         ("s8i",    0x004002, 0x00f00f, Instr.fmt_RRI8_disp ),
         ("s16i",   0x005002, 0x00f00f, Instr.fmt_RRI8_disp16 ),
+        ("s32c1i", 0x00e002, 0x00f00f, Instr.fmt_RRI8_s32c1a ),
+        ("s32e",   0x490000, 0x00f00f, Instr.fmt_RRI4 ),
         ("s32i",   0x006002, 0x00f00f, Instr.fmt_RRI8_disp32 ),
+        ("s32ri",  0x00f002, 0x00f00f, Instr.fmt_RRI8_disp32 ),
         ("sext",   0x230000, 0xff000f, Instr.fmt_RRR_sext ),
         ("sll",    0xa10000, 0xff00ff, Instr.fmt_RRR_sll ),
         ("slli",   0x010000, 0xef000f, Instr.fmt_RRR_slli ),
@@ -344,14 +451,28 @@ class XtensaProcessor(processor_t):
         ("ssa8b",  0x403000, 0xfff0ff, Instr.fmt_RRR_ssa ),
         ("ssa8l",  0x402000, 0xfff0ff, Instr.fmt_RRR_ssa ),
         ("ssai",   0x404000, 0xfff0ef, Instr.fmt_RRR_ssai ),
+        ("ssi",    0x004003, 0x00f00f, Instr.fmt_RRI8 ),
+        ("ssiu",   0x00c003, 0x00f00f, Instr.fmt_RRI8 ),
         ("ssl",    0x401000, 0xfff0ff, Instr.fmt_RRR_ssa ),
         ("ssr",    0x400000, 0xfff0ff, Instr.fmt_RRR_ssa ),
+        ("ssx",    0x480000, 0xff000f, Instr.fmt_RRR ),
+        ("ssx",    0x580000, 0xff000f, Instr.fmt_RRR ),
         ("sub",    0xc00000, 0xff000f, Instr.fmt_RRR ),
+        ("sub.s",  0x1a0000, 0xff000f, Instr.fmt_RRR ),
         ("subx2",  0xd00000, 0xff000f, Instr.fmt_RRR ),
         ("subx4",  0xe00000, 0xff000f, Instr.fmt_RRR ),
         ("subx8",  0xf00000, 0xff000f, Instr.fmt_RRR ),
+        ("syscall",0x005000, 0xffffff, Instr.fmt_NONE ),
+        ("trunc.s",0x9a0000, 0xff000f, Instr.fmt_RRR_ceil ),
+        ("ueq.s",  0x3b0000, 0xff000f, Instr.fmt_RRR ),
+        ("ufloat.s",      0xda0000, 0xff000f, Instr.fmt_RRR_ceil ),
+        ("ule.s",  0x7b0000, 0xff000f, Instr.fmt_RRR ),
+        ("ult.s",  0x5b0000, 0xff000f, Instr.fmt_RRR ),
+        ("un.s",   0x1b0000, 0xff000f, Instr.fmt_RRR ),
+        ("utrunc.s",      0xea0000, 0xff000f, Instr.fmt_RRR_ceil ),
         ("waiti",  0x007000, 0xfff0ff, Instr.fmt_RRR_1imm ),
         ("wdtlb",  0x50e000, 0xfff00f, Instr.fmt_RRR_2r ),
+        ("wfr",    0xfa0050, 0xff00ff, Instr.fmt_RRR_sll ),
         ("witlb",  0x506000, 0xfff00f, Instr.fmt_RRR_2r ),
         ("wsr.intenable", 0x13e400, 0xffff0f, Instr.fmt_RSR_spec ),
         ("wsr.litbase",   0x130500, 0xffff0f, Instr.fmt_RSR_spec ),
@@ -363,19 +484,22 @@ class XtensaProcessor(processor_t):
         ("wsr.sar",       0x130300, 0xffff0f, Instr.fmt_RSR_spec ),
         ("wsr",    0x130000, 0xff000f, Instr.fmt_RSR ),
         ("xor",    0x300000, 0xff000f, Instr.fmt_RRR ),
+        ("xorb",   0x420000, 0xff000f, Instr.fmt_RRR ),
         ("xsr",    0x610000, 0xff000f, Instr.fmt_RSR ),
 
         ("add.n",   0x000a, 0x000f, Instr.fmt_RRRN ),
         ("addi.n",  0x000b, 0x000f, Instr.fmt_RRRN_addi ),
-        ("beqz.n",  0x008c, 0x00cf, Instr.fmt_RI6 ),
-        ("bnez.n",  0x00cc, 0x00cf, Instr.fmt_RI6 ),
+        ("beqz.n",  0x008c, 0x00cf, Instr.fmt_RI6, CF_JUMP ),
+        ("bnez.n",  0x00cc, 0x00cf, Instr.fmt_RI6, CF_JUMP ),
         ("mov.n",   0x000d, 0xf00f, Instr.fmt_RRRN_2r ),
         ("break.n", 0xf02d, 0xf0ff, Instr.fmt_RRRN ),
         ("ret.n",   0xf00d, 0xffff, Instr.fmt_NNONE, CF_STOP ),
+        ("retw.n",  0xf01d, 0xffff, Instr.fmt_NNONE, CF_STOP ),
         ("l32i.n",  0x0008, 0x000f, Instr.fmt_RRRN_disp ),
         ("movi.n",  0x000c, 0x008f, Instr.fmt_RI7 ),
         ("nop.n",   0xf03d, 0xffff, Instr.fmt_NNONE ),
         ("s32i.n",  0x0009, 0x000f, Instr.fmt_RRRN_disp ),
+        ("ill.n",  0xf06d, 0xffff, Instr.fmt_NONE ),
     )
 
     def __init__(self):
@@ -412,30 +536,30 @@ class XtensaProcessor(processor_t):
             instr.id = i
 
     def _init_registers(self):
-        self.regNames = ["a%d" % d for d in range(16)]
-        self.regNames += ["pc", "sar", "CS", "DS"]
+        self.reg_names = ["a%d" % d for d in range(16)]
+        self.reg_names += ["pc", "sar", "CS", "DS"]
         self.reg_ids = {}
-        for i, reg in enumerate(self.regNames):
+        for i, reg in enumerate(self.reg_names):
             self.reg_ids[reg] = i
 
-        self.regFirstSreg = self.regCodeSreg = self.reg_ids["CS"]
-        self.regLastSreg = self.regDataSreg = self.reg_ids["DS"]
+        self.reg_first_sreg = self.reg_code_sreg = self.reg_ids["CS"]
+        self.reg_last_sreg = self.reg_data_sreg = self.reg_ids["DS"]
 
-    def _pull_op_byte(self):
-        ea = self.cmd.ea + self.cmd.size
-        byte = get_full_byte(ea)
-        self.cmd.size += 1
+    def _pull_op_byte(self, insn):
+        ea = insn.ea + insn.size
+        byte = get_wide_byte(ea)
+        insn.size += 1
         return byte
 
-    def _find_instr(self):
-        op = self._pull_op_byte()
-        op |= self._pull_op_byte() << 8
+    def _find_instr(self, insn):
+        op = self._pull_op_byte(insn)
+        op |= self._pull_op_byte(insn) << 8
 
         for instr in self.short_insts:
             if instr.match(op):
                 return instr, op
 
-        op |= self._pull_op_byte() << 16
+        op |= self._pull_op_byte(insn) << 16
 
         for instr in self.long_insts:
             if instr.match(op):
@@ -443,86 +567,94 @@ class XtensaProcessor(processor_t):
 
         return None, op
 
-    def ana(self):
-        instr, op = self._find_instr()
+    def notify_ana(self, insn):
+        instr, op = self._find_instr(insn)
         if not instr:
+            # sometimes a 0x00 is used as padding at the end of a function
+            # so it has to be ignored to detect function properly
+            # this may be en issue sometimes but for what I've seend there not opcode using 0 as first byte
+            if op == 0:
+                insn.itype = self.instrs_ids["ill"]
+                return 1
             return 0
 
-        self.cmd.itype = instr.id
+        insn.itype = instr.id
 
-        operands = [self.cmd[i] for i in range(6)]
+        operands = [insn[i] for i in xrange(1, 6)]
         for o in operands:
             o.type = o_void
-        instr.parseOperands(operands, op, self.cmd)
+        instr.parseOperands(operands, op, insn)
 
-        return self.cmd.size
+        return insn.size
 
-    def emu(self):
-        for i in range(6):
-            op = self.cmd[i]
+    def emu(self, insn):
+        for i in xrange(1, 6):
+            op = insn[i]
             if op.type == o_void:
                 break
             elif op.type == o_mem:
-                ua_dodata2(0, op.addr, op.dtyp)
-                ua_add_dref(0, op.addr, dr_R)
+                insn.create_op_data(op.addr, 0, op.dtyp)
+                insn.add_dref(op.addr, 0, dr_R)
             elif op.type == o_near:
-                features = self.cmd.get_canon_feature()
+                features = insn.get_canon_feature()
                 if features & CF_CALL:
                     fl = fl_CN
                 else:
                     fl = fl_JN
-                ua_add_cref(0, op.addr, fl)
+                insn.add_cref(op.addr, 0, fl)
 
-        feature = self.cmd.get_canon_feature()
+        feature = insn.get_canon_feature()
         if feature & CF_JUMP:
-            QueueMark(Q_jumps, self.cmd.ea)
+            remember_problem(Q_jumps, insn.ea)
         if not feature & CF_STOP:
-            ua_add_cref(0, self.cmd.ea + self.cmd.size, fl_F)
+            insn.add_cref(insn.ea + insn.size, 0, fl_F)
         return True
 
-    def outop(self, op):
+    notify_emu = emu
+
+    def outop(self, ctx, op):
         if op.type == o_reg:
-            out_register(self.regNames[op.reg])
+            ctx.out_register(self.reg_names[op.reg])
         elif op.type == o_imm:
-            instr = self.instrs_list[self.cmd.itype]
+            instr = self.instrs_list[ctx.insn.itype]
             if instr.name in ("extui", "bbci", "bbsi", "slli", "srli", "srai", "ssai"):
                 # bit numbers/shifts are always decimal
-                OutLong(op.value, 10)
+                ctx.out_long(op.value, 10)
             else:
-                OutValue(op, OOFW_IMM)
+                ctx.out_value(op, OOFW_IMM)
         elif op.type in (o_near, o_mem):
-            ok = out_name_expr(op, op.addr, BADADDR)
+            ok = ctx.out_name_expr(op, op.addr, BADADDR)
             if not ok:
-                out_tagon(COLOR_ERROR)
-                OutLong(op.addr, 16)
-                out_tagoff(COLOR_ERROR)
-                QueueMark(Q_noName, self.cmd.ea)
+                ctx.out_tagon(COLOR_ERROR)
+                ctx.out_long(op.addr, 16)
+                ctx.out_tagoff(COLOR_ERROR)
+                remember_problem(Q_noName, ctx.insn.ea)
         elif op.type == o_displ:
-            out_register(self.regNames[op.phrase])
-            OutLine(", ")
-            OutValue(op, OOF_ADDR)
+            ctx.out_register(self.reg_names[op.phrase])
+            ctx.out_line(", ")
+            ctx.out_value(op, OOF_ADDR)
         else:
             return False
         return True
 
-    def out(self):
-        buf = init_output_buffer(1024)
-        OutMnem(15)
+    notify_out_operand = outop
 
-        instr = self.instrs_list[self.cmd.itype]
+    def out_mnem(self, ctx):
+        ctx.out_mnem(15, "")
 
-        for i in range(6):
-            if self.cmd[i].type == o_void:
+    def notify_out_insn(self, ctx):
+        ctx.out_mnemonic()
+        for i in xrange(1, 6):
+            if ctx.insn[i].type == o_void:
                 break
 
             if i > 0:
-                out_symbol(',')
-            OutChar(' ')
-            out_one_operand(i)
+                ctx.out_symbol(',')
+            ctx.out_char(' ')
+            ctx.out_one_operand(i)
 
-        term_output_buffer()
-        cvar.gl_comm = 1
-        MakeLine(buf)
+        ctx.set_gen_cmt()
+        ctx.flush_outbuf()
 
 
 def PROCESSOR_ENTRY():
